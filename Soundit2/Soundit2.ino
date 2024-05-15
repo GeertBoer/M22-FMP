@@ -87,7 +87,7 @@ PLAYBACK_STATES play_state = SELECTING_FILE;
 bool encoder_turned = false;
 
 
-
+int sample_to_play = 0;
 
 
 void loop() {  // check buttons for changes
@@ -107,8 +107,9 @@ void loop() {  // check buttons for changes
 
   if (main_state == RECORDER) {
     if (rec_state == BEFORE_RECORDING) {
-      if (list_position < -1) {  // don't go below -2
-        UI->draw_sample_nr(7743, true);
+      if (list_position < -1) {  // don't go below -2'
+        list_position = -2;
+        UI->draw_text("To player");
         if (button_encoder.fallingEdge()) {
           list_position = 0;
           play_state = SELECTING_FILE;
@@ -170,7 +171,8 @@ void loop() {  // check buttons for changes
   if (main_state == PLAYBACK) {
     if (play_state == SELECTING_FILE) {
       if (list_position < -1) {  // don't go below -2
-        UI->draw_sample_nr(7380, true);
+        UI->draw_text("To recorder");
+        list_position = -2;
         if (button_encoder.fallingEdge()) {
           list_position = 0;
           rec_state = BEFORE_RECORDING;
@@ -180,7 +182,7 @@ void loop() {  // check buttons for changes
 
       if (list_position == -1) {  // don't go below -1
         list_position = -1;
-        UI->draw_speaker_icon("Volume gain", sys->get_volume());
+        UI->draw_speaker_icon("Click knob to adjust", sys->get_volume());
         if (button_encoder.fallingEdge()) {
           play_state = ADJUSTING_VOLUME;
         }
@@ -191,6 +193,7 @@ void loop() {  // check buttons for changes
 
         if (button_rec.fallingEdge()) {
           sys->play_wav(nrs[list_position]);
+          sample_to_play = list_position;
           S_PL("acc starting point x = ");
           S_PL(acc->x());
           play_state = PLAYING;
@@ -202,11 +205,11 @@ void loop() {  // check buttons for changes
       }
 
     } else if (play_state == ADJUSTING_VOLUME) {
-      UI->draw_speaker_icon("Volume gain", sys->get_volume());
+      UI->draw_speaker_icon("Turn knob to adjust", sys->get_volume());
       if (rotary_encoder.get_state() == TURNED_CW) {
-        sys->set_volume(sys->get_volume() + 1);
+        sys->set_volume(sys->get_volume() + 5);
       } else if (rotary_encoder.get_state() == TURNED_CCW) {
-        sys->set_volume(sys->get_volume() - 1);
+        sys->set_volume(sys->get_volume() - 5);
       }
 
       if (button_encoder.fallingEdge()) {
@@ -231,7 +234,7 @@ void loop() {  // check buttons for changes
         sys->set_speed(speed);
       } else if (y < -50) {
         y = y * -1;
-        float speed = sys->mapf(y, 50, 280, 1.0, 0.2);
+        float speed = sys->mapf(y, 50, 280, 1.0, 0.3);
         sys->set_speed(speed);
       } else {
         sys->set_speed(1.0);
@@ -240,10 +243,11 @@ void loop() {  // check buttons for changes
 
 
       if (!sys->is_playing()) {
-        sys->play_wav(nrs[list_position]);
+        sys->play_wav(nrs[sample_to_play]);
       }
       if (button_rec.risingEdge()) {
         sys->stop_playing();
+        list_position = sample_to_play;
         play_state = SELECTING_FILE;
       }
     }
