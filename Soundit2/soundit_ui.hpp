@@ -15,6 +15,9 @@
 
 #define ONELINE 15
 
+#include "micicon.hpp"
+#include "volume_icon.hpp"
+
 using string = std::string;
 using strVec = std::vector<string>;
 
@@ -22,17 +25,70 @@ class SounditUI {
 private:
   U8G2_SSD1306_128X64_NONAME_F_HW_I2C* u8g2;
 
+  float mapf(float x, float in_min, float in_max, float out_min, float out_max);
+
 public:
   void draw_message_screen(std::string message, bool selected);
   void draw_message_screen_blocking(std::string message, Bounce& button);
-  void draw_sample_nr(int samplenr);
-  void draw_plus(); 
+  void draw_sample_nr(int samplenr, bool write_immediately);
+  void draw_plus();
+  void draw_mic_icon(std::string text, float position);
+  void draw_speaker_icon(std::string text, int position);
+
+  void overlay_fader(float position);
 
   SounditUI();
 };
 
 
-void SounditUI::draw_sample_nr(int samplenr) {
+float SounditUI::mapf(float x, float in_min, float in_max, float out_min, float out_max) {
+  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
+
+void SounditUI::overlay_fader(float position) {
+  if (position > 1.0) {
+    position = 1.0;
+  } else if (position < 0.0) {
+    position = 0.0;
+  }
+
+  int faderpos = (int)((float)128 * position);
+
+  u8g2->setDrawColor(2);
+  u8g2->drawBox(0, 0, faderpos, 64);
+
+  u8g2->sendBuffer();
+}
+
+void SounditUI::draw_mic_icon(std::string text, float position) {
+  u8g2->clearBuffer();
+  u8g2->setDrawColor(1);
+  u8g2->drawXBM(0, 0, 128, 64, microphone_20gain_20adjust_bits);
+
+  u8g2->setFont(u8g2_font_crox2h_tf);  //Font height = 20px, so centering vertically = (64-20)/2 = 22px
+  int width = u8g2->getUTF8Width(text.c_str());
+  int margin = (128 - width) / 2;
+  u8g2->drawStr(margin, 62, text.c_str());
+
+  overlay_fader(position);
+}
+
+void SounditUI::draw_speaker_icon(std::string text, int position) {
+  u8g2->clearBuffer();
+  u8g2->setDrawColor(1);
+  u8g2->drawXBM(0, 0, 128, 64, volume_20level_20adjust_bits);
+
+  u8g2->setFont(u8g2_font_crox2h_tf);  //Font height = 20px, so centering vertically = (64-20)/2 = 22px
+  int width = u8g2->getUTF8Width(text.c_str());
+  int margin = (128 - width) / 2;
+  u8g2->drawStr(margin, 62, text.c_str());
+
+  float position_f = mapf((float)position, 0, 100, 0.0, 1.0);
+
+  overlay_fader(position_f);
+}
+
+void SounditUI::draw_sample_nr(int samplenr, bool write_immediately) {
   u8g2->clearBuffer();
 
   u8g2->setFont(u8g2_font_fur20_tf);  //Font height = 20px, so centering vertically = (64-20)/2 = 22px
@@ -40,7 +96,9 @@ void SounditUI::draw_sample_nr(int samplenr) {
   int margin = (128 - width) / 2;
   u8g2->drawStr(margin, 42, String(samplenr).c_str());
 
-  u8g2->sendBuffer();
+  if (write_immediately) {
+    u8g2->sendBuffer();
+  }
 }
 
 void SounditUI::draw_plus() {
@@ -50,8 +108,6 @@ void SounditUI::draw_plus() {
   int width = u8g2->getUTF8Width("+");
   int margin = (128 - width) / 2;
   u8g2->drawStr(margin, 42, "+");
-
-  u8g2->sendBuffer();
 }
 
 

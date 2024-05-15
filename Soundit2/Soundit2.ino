@@ -1,5 +1,14 @@
+#define NOD
+
+#ifdef DEBUG
 #define S_PL Serial.println
 #define S_P Serial.print
+#endif
+
+#ifndef DEBUG
+#define S_PL  //Serial.println
+#define S_P   //Serial.print
+#endif
 
 #include <Wire.h>
 #include "main_extra.hpp"
@@ -27,10 +36,19 @@ int volume = 1;
 
 #include "soundit_ui.hpp"
 SounditUI* UI;
+
+#include "audio_system.hpp"
+AudioSystem* sys;
+
+#include "accelerometer.hpp"
+Accelerometer* acc;
+
 std::vector<int> nrs;
 void setup() {
   Serial.begin(115200);
+#ifdef DEBUG
   while (!Serial) {}  // Comment this when not on PC USB
+#endif
   while (!SD.begin()) {}
 
   Wire.begin();
@@ -47,11 +65,14 @@ void setup() {
 
   get_used_nrs_int(sd_wav_filenames, nrs);
 
-  UI->draw_sample_nr(20);
 
-  for (int i = 0; i < nrs.size(); i++) {
+  for (unsigned int i = 0; i < nrs.size(); i++) {
     S_PL(nrs[i]);
   }
+
+  sys = new AudioSystem(40);
+
+  acc = new Accelerometer();
 }
 
 
@@ -59,44 +80,174 @@ void setup() {
 int selected_audio_sample_nr = 0;
 int list_position = 0;
 
-MAIN_STATES main_state = RECORDER;
+MAIN_STATES main_state = PLAYBACK;
+RECORDER_STATES rec_state = BEFORE_RECORDING;
+PLAYBACK_STATES play_state = SELECTING_FILE;
 
-void loop() {
-  rotary_encoder.update();
-  if (rotary_encoder.get_state() == TURNED_CW) {
-    list_position++;
-  } else if (rotary_encoder.get_state() == TURNED_CCW) {
-    list_position--;
-  }
-
-  if (list_position < 0) {
-    list_position = 0;
-  }
-
-  if (list_position < nrs.size()) {
-    if ((rotary_encoder.get_state() == TURNED_CW) || (rotary_encoder.get_state() == TURNED_CCW)) {
-      S_PL(sd_wav_filenames[list_position].c_str());
-      UI->draw_sample_nr(nrs[list_position]);
-    }
-  }
-
-  if (list_position >= nrs.size()) {
-    list_position = nrs.size();
-    UI->draw_plus();
-
-    if (button_rec.fallingEdge()) {
-      nrs.push_back(get_lowest_free_nr(sd_wav_filenames));
-      
-    }
-  }
+bool encoder_turned = false;
 
 
 
-  // check buttons for changes
+
+
+void loop() {  // check buttons for changes
   button_encoder.update();
   button_rec.update();
 
-  if (button_rec.fallingEdge()) {
-    S_PL(sd_wav_filenames[0].c_str());
+  rotary_encoder.update();
+  if (rotary_encoder.get_state() == TURNED_CW) {
+    encoder_turned = true;
+    list_position++;
+  } else if (rotary_encoder.get_state() == TURNED_CCW) {
+    encoder_turned = true;
+    list_position--;
   }
+
+
+
+  if (main_state == RECORDER) {
+    if (rec_state == BEFORE_RECORDING) {
+      if (list_position < -1) {  // don't go below -2
+        UI->draw_sample_nr(7743, true);
+        if (button_encoder.fallingEdge()) {
+          list_position = 0;
+          play_state = SELECTING_FILE;
+          main_state = PLAYBACK;
+        }
+      }
+
+      if (list_position == -1) {
+        UI->draw_mic_icon("Click to adjust gain", sys->get_mic_peak());
+        if (button_encoder.fallingEdge()) {
+          rec_state = ADJUSTING_MIC_GAIN;
+        }
+      }
+
+      if ((list_position < (int)nrs.size()) && (list_position >= 0)) {  // draw existing file numbers
+        UI->draw_sample_nr(nrs[list_position], false);
+        UI->overlay_fader(sys->get_mic_peak());
+      }
+
+      if (list_position >= (int)nrs.size()) {  // draw '+' to add extra file for recording
+        list_position = nrs.size();
+        UI->draw_plus();
+        UI->overlay_fader(sys->get_mic_peak());
+
+        if (button_rec.fallingEdge()) {
+          int file_nr_to_record = get_lowest_free_nr(sd_wav_filenames);
+          UI->draw_sample_nr(file_nr_to_record, true);
+          sys->start_recording(file_nr_to_record);
+          rec_state = DURING_RECORDING;
+          S_PL("starting rec");
+        }
+      }
+    } else if (rec_state == DURING_RECORDING) {
+      sys->continue_recording();
+      // UI->overlay_fader(sys->get_mic_peak());
+      if (button_rec.risingEdge()) {
+        sys->stop_recording();
+        S_PL("stopping rec");
+        fill_and_purge_filename_list_nrs(sd_wav_filenames);
+        get_used_nrs_int(sd_wav_filenames, nrs);
+        list_position = 0;
+        rec_state = BEFORE_RECORDING;
+      }
+    } else if (rec_state == ADJUSTING_MIC_GAIN) {
+      UI->draw_mic_icon("Turn to adjust gain", sys->get_mic_peak());
+      if (rotary_encoder.get_state() == TURNED_CW) {
+        sys->mic_gain_plus();
+      } else if (rotary_encoder.get_state() == TURNED_CCW) {
+        sys->mic_gain_min();
+      }
+      if (button_encoder.fallingEdge()) {
+        list_position = -1;
+        rec_state = BEFORE_RECORDING;
+      }
+    }
+  }
+
+
+  if (main_state == PLAYBACK) {
+    if (play_state == SELECTING_FILE) {
+      if (list_position < -1) {  // don't go below -2
+        UI->draw_sample_nr(7380, true);
+        if (button_encoder.fallingEdge()) {
+          list_position = 0;
+          rec_state = BEFORE_RECORDING;
+          main_state = RECORDER;
+        }
+      }
+
+      if (list_position == -1) {  // don't go below -1
+        list_position = -1;
+        UI->draw_speaker_icon("Volume gain", sys->get_volume());
+        if (button_encoder.fallingEdge()) {
+          play_state = ADJUSTING_VOLUME;
+        }
+      }
+
+      if ((list_position < (int)nrs.size()) && (list_position >= 0)) {  // draw existing file numbers
+        UI->draw_sample_nr(nrs[list_position], true);
+
+        if (button_rec.fallingEdge()) {
+          sys->play_wav(nrs[list_position]);
+          S_PL("acc starting point x = ");
+          S_PL(acc->x());
+          play_state = PLAYING;
+        }
+      }
+
+      if (list_position >= (int)nrs.size()) {
+        list_position = (int)nrs.size() - 1;
+      }
+
+    } else if (play_state == ADJUSTING_VOLUME) {
+      UI->draw_speaker_icon("Volume gain", sys->get_volume());
+      if (rotary_encoder.get_state() == TURNED_CW) {
+        sys->set_volume(sys->get_volume() + 1);
+      } else if (rotary_encoder.get_state() == TURNED_CCW) {
+        sys->set_volume(sys->get_volume() - 1);
+      }
+
+      if (button_encoder.fallingEdge()) {
+        list_position = -1;
+        play_state = SELECTING_FILE;
+      }
+    } else if (play_state == PLAYING) {
+      int x = acc->x();
+      if (x < 0) {
+        x = x * -1;
+        x = map(x, 0, 280, 5000, 0);
+        sys->set_lpf(x);
+      } else if (x > 0) {
+        x = map(x, 0, 280, 0, 8000);
+        sys->set_hpf(x);
+      }
+
+      int y = acc->y();
+
+      if (y > 50) {
+        float speed = sys->mapf(y, 50, 280, 1.0, 2.0);
+        sys->set_speed(speed);
+      } else if (y < -50) {
+        y = y * -1;
+        float speed = sys->mapf(y, 50, 280, 1.0, 0.2);
+        sys->set_speed(speed);
+      } else {
+        sys->set_speed(1.0);
+      }
+
+
+
+      if (!sys->is_playing()) {
+        sys->play_wav(nrs[list_position]);
+      }
+      if (button_rec.risingEdge()) {
+        sys->stop_playing();
+        play_state = SELECTING_FILE;
+      }
+    }
+  }
+
+  encoder_turned = false;
 }
