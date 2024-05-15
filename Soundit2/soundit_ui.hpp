@@ -31,6 +31,7 @@ public:
   void draw_message_screen(std::string message, bool selected);
   void draw_message_screen_blocking(std::string message, Bounce& button);
   void draw_sample_nr(int samplenr, bool write_immediately);
+  void draw_text(std::string text);
   void draw_plus();
   void draw_mic_icon(std::string text, float position);
   void draw_speaker_icon(std::string text, int position);
@@ -76,7 +77,7 @@ void SounditUI::draw_mic_icon(std::string text, float position) {
 void SounditUI::draw_speaker_icon(std::string text, int position) {
   u8g2->clearBuffer();
   u8g2->setDrawColor(1);
-  u8g2->drawXBM(0, 0, 128, 64, volume_20level_20adjust_bits);
+  u8g2->drawXBM(0, 0, 128, 64, volume_icon_bits);
 
   u8g2->setFont(u8g2_font_crox2h_tf);  //Font height = 20px, so centering vertically = (64-20)/2 = 22px
   int width = u8g2->getUTF8Width(text.c_str());
@@ -99,6 +100,17 @@ void SounditUI::draw_sample_nr(int samplenr, bool write_immediately) {
   if (write_immediately) {
     u8g2->sendBuffer();
   }
+}
+
+void SounditUI::draw_text(std::string text) {
+  u8g2->clearBuffer();
+
+  u8g2->setFont(u8g2_font_fur20_tf);  //Font height = 20px, so centering vertically = (64-20)/2 = 22px
+  int width = u8g2->getUTF8Width(text.c_str());
+  int margin = (128 - width) / 2;
+  u8g2->drawStr(margin, 42, text.c_str());
+
+  u8g2->sendBuffer();
 }
 
 void SounditUI::draw_plus() {

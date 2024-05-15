@@ -59,7 +59,7 @@ private:
   unsigned long Subchunk2Size = 0L;
   unsigned long recByteSaved = 0L;
   unsigned long NumSamples = 0L;
-  byte byte1, byte2, byte3, byte4;
+  uint8_t byte1, byte2, byte3, byte4;
   // end write wav
 
   int mic_gain = 80;
@@ -194,7 +194,7 @@ void AudioSystem::start_recording(int samplenr) {
 unsigned long AudioSystem::continue_recording() {
   if (is_recording) {
     if (queue1.available() >= 2) {
-      byte buffer[512];
+      uint8_t buffer[512];
       memcpy(buffer, queue1.readBuffer(), 256);
       queue1.freeBuffer();
       memcpy(buffer + 256, queue1.readBuffer(), 256);
@@ -214,7 +214,7 @@ void AudioSystem::stop_recording() {
   queue1.end();
   if (is_recording) {
     while (queue1.available() > 0) {
-      frec.write((byte*)queue1.readBuffer(), 256);
+      frec.write((uint8_t*)queue1.readBuffer(), 256);
       queue1.freeBuffer();
       recByteSaved += 256;
     }
@@ -316,8 +316,6 @@ float AudioSystem::get_mic_peak() {
 
 
 void AudioSystem::set_lpf(int cutoff) {
-  // S_P("Setting cutoff L: ");
-  // S_PL(cutoff);
   biquad0.setLowpass(0, (float)cutoff, 1.5f);
   biquad1.setLowpass(0, (float)cutoff, 1.5f);
 
@@ -328,8 +326,6 @@ void AudioSystem::set_lpf(int cutoff) {
 }
 
 void AudioSystem::set_hpf(int cutoff) {
-  // S_P("Setting cutoff H: ");
-  // S_PL(cutoff);
   biquad0.setHighpass(0, (float)cutoff, 1.5f);
   biquad1.setHighpass(0, (float)cutoff, 1.5f);
 
