@@ -6,10 +6,12 @@ enum ROTARY_STATES {
   TURNED_CCW,
 };
 
-enum FX {
+enum EFFECTS {
   LPF,
   HPF,
   VOLUME,
+  SPEED,
+  BITCRUSH,
 };
 
 enum MAIN_STATES {
