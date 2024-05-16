@@ -62,7 +62,7 @@ private:
   uint8_t byte1, byte2, byte3, byte4;
   // end write wav
 
-  int mic_gain = 80;
+  int mic_gain = 50;
 
 
 
@@ -81,6 +81,7 @@ public:
 
   void mic_gain_plus();
   void mic_gain_min();
+  int get_mic_gain();
   float get_mic_peak();
 
   void set_lpf(int cutoff);
@@ -136,6 +137,9 @@ int AudioSystem::get_volume() {
   return mapf(master_volume_f, 0, 0.3, 0.0, 100.0);
 }
 
+int AudioSystem::get_mic_gain() {
+  return mic_gain;
+}
 
 void AudioSystem::set_volume(int volume) {
   if (volume < 0) {

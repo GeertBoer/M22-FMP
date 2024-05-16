@@ -1,4 +1,4 @@
-#define NOD
+#define DEBUG
 
 #ifdef DEBUG
 #define S_PL Serial.println
@@ -157,8 +157,10 @@ void loop() {  // check buttons for changes
       UI->draw_mic_icon("Turn to adjust gain", sys->get_mic_peak());
       if (rotary_encoder.get_state() == TURNED_CW) {
         sys->mic_gain_plus();
+        S_PL(sys->get_mic_gain());
       } else if (rotary_encoder.get_state() == TURNED_CCW) {
         sys->mic_gain_min();
+        S_PL(sys->get_mic_gain());
       }
       if (button_encoder.fallingEdge()) {
         list_position = -1;
