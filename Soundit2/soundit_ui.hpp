@@ -37,6 +37,8 @@ public:
   void draw_speaker_icon(std::string text, int position);
 
   void overlay_fader(float position);
+  void overlay_text_bottom(std::string text);
+  void overlay_text_top(std::string text);
 
   SounditUI();
 };
@@ -59,6 +61,22 @@ void SounditUI::overlay_fader(float position) {
   u8g2->drawBox(0, 0, faderpos, 64);
 
   u8g2->sendBuffer();
+}
+
+void SounditUI::overlay_text_bottom(std::string text) {
+  u8g2->setDrawColor(2);
+  u8g2->setFont(u8g2_font_crox2h_tf);  //Font height = 20px, so centering vertically = (64-20)/2 = 22px
+  int width = u8g2->getUTF8Width(text.c_str());
+  int margin = (128 - width) / 2;
+  u8g2->drawStr(margin, 62, text.c_str());
+}
+
+void SounditUI::overlay_text_top(std::string text) {
+  u8g2->setDrawColor(2);
+  u8g2->setFont(u8g2_font_crox2h_tf);  //Font height = 20px, so centering vertically = (64-20)/2 = 22px
+  int width = u8g2->getUTF8Width(text.c_str());
+  int margin = (128 - width) / 2;
+  u8g2->drawStr(margin, 12, text.c_str());
 }
 
 void SounditUI::draw_mic_icon(std::string text, float position) {

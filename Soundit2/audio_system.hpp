@@ -79,6 +79,8 @@ public:
   void stop_recording();
   const char* get_last_recording_name();
 
+  void delete_sample(int samplenr);
+
   void mic_gain_plus();
   void mic_gain_min();
   int get_mic_gain();
@@ -171,6 +173,22 @@ void AudioSystem::stop_playing() {
 
 bool AudioSystem::is_playing() {
   return playSdWav.isPlaying();
+}
+
+void AudioSystem::delete_sample(int samplenr) {
+  S_P("deleting sample");
+
+  std::string deleting_sample = "";
+  deleting_sample = "/Soundit/" + to_string(samplenr) + ".wav";
+
+  if (SD.exists(deleting_sample.c_str())) {
+    S_P("deleting sample");
+    S_PL(deleting_sample.c_str());
+    SD.remove(deleting_sample.c_str());
+  } else {
+    S_P(deleting_sample.c_str());
+    S_PL("does not exist");
+  }
 }
 
 void AudioSystem::start_recording(int samplenr) {
