@@ -92,6 +92,13 @@ bool ignore_rotary = false;
 int sample_menu_option = 0;
 bool sample_menu_option_active = false;
 
+EFFECTS assigned_effects[4] = { DELAYMIX, DELAYMIX, SPEEDUP, SLOWDOWN };  // X+, X-, Y+, Y-
+
+int fx_to_change = 0;
+void fx_changer(int assignment_position) {
+}
+
+
 void loop() {  // check buttons for changes
 
   // Check all buttons and wheels for changes:
@@ -246,11 +253,11 @@ void loop() {  // check buttons for changes
         switch (play_state) {
           case SELECTING_FILE:
             {
-              if (list_position < -1) {  // don't go below -2
+              if (list_position <= -6) {  // don't go below -2
                 UI->Clear();
-                UI->draw_text("To recorder");
+                UI->draw_text("To recordr");
                 UI->Write();
-                list_position = -2;
+                list_position = -6;
                 if (button_encoder.fallingEdge()) {
                   list_position = 0;
                   rec_state = BEFORE_RECORDING;
@@ -258,8 +265,70 @@ void loop() {  // check buttons for changes
                 }
               }
 
-              else if (list_position == -1) {  // don't go below -1
-                list_position = -1;
+               else if (list_position == -5) {  // y axis positive
+                UI->Clear();
+                UI->overlay_text_top(EFFECTS_STRINGS[assigned_effects[3]]);
+                UI->draw_text(AVAILABLE_AXES[3]);
+                UI->overlay_text_bottom("Click to change");
+                UI->Write();
+
+                if (button_encoder.fallingEdge()) {
+                  fx_to_change = 3;
+                  play_state = CHANGING_FX_SETTINGS;
+                  ignore_rotary = true;
+                }
+              }
+
+              else if (list_position == -4) {  // y axis positive
+                UI->Clear();
+                UI->overlay_text_top(EFFECTS_STRINGS[assigned_effects[2]]);
+                UI->draw_text(AVAILABLE_AXES[2]);
+                UI->overlay_text_bottom("Click to change");
+                UI->Write();
+
+                if (button_encoder.fallingEdge()) {
+                  fx_to_change = 2;
+                  play_state = CHANGING_FX_SETTINGS;
+                  ignore_rotary = true;
+                }
+              }
+
+              else if (list_position == -3) {  // y axis positive
+                UI->Clear();
+                UI->overlay_text_top(EFFECTS_STRINGS[assigned_effects[1]]);
+                UI->draw_text(AVAILABLE_AXES[1]);
+                UI->overlay_text_bottom("Click to change");
+                UI->Write();
+
+                if (button_encoder.fallingEdge()) {
+                  fx_to_change = 1;
+                  play_state = CHANGING_FX_SETTINGS;
+                  ignore_rotary = true;
+                }
+              }
+
+              else if (list_position == -2) {  // y axis positive
+                UI->Clear();
+                UI->overlay_text_top(EFFECTS_STRINGS[assigned_effects[0]]);
+                UI->draw_text(AVAILABLE_AXES[0]);
+                UI->overlay_text_bottom("Click to change");
+                UI->Write();
+
+                if (button_encoder.fallingEdge()) {
+                  fx_to_change = 0;
+                  play_state = CHANGING_FX_SETTINGS;
+                  ignore_rotary = true;
+                }
+              }
+
+             
+              // else if (list_position == -1) {  // don't go below -1
+              // else if (list_position == -1) {  // don't go below -1
+              // else if (list_position == -1) {  // don't go below -1
+
+
+
+              else if (list_position == -1) {
                 UI->Clear();
                 UI->draw_speaker_icon("Click knob to adjust", sys->get_volume());
                 UI->Write();
@@ -326,6 +395,8 @@ void loop() {  // check buttons for changes
               // handle sensors and effects
               int x = acc->x();
               if (x < 0) { x = x * -1; }
+
+
               sys->set_delay(x);
 
               // if (x < -30) {
@@ -420,6 +491,33 @@ void loop() {  // check buttons for changes
                 default:
                   break;
               }
+              break;
+            }
+          case CHANGING_FX_SETTINGS:
+            {
+              int current_effect = assigned_effects[fx_to_change];
+              if (rotary_encoder.get_state() == TURNED_CW) {
+                current_effect++;
+                if (current_effect > 4) {
+                  current_effect = 0;
+                }
+              } else if (rotary_encoder.get_state() == TURNED_CCW) {
+                current_effect--;
+                if (current_effect < 0) {
+                  current_effect = 4;
+                }
+              }
+              assigned_effects[fx_to_change] = current_effect;
+              UI->Clear();
+              UI->overlay_text_top(EFFECTS_STRINGS[assigned_effects[fx_to_change]]);
+              UI->draw_text(AVAILABLE_AXES[fx_to_change]);
+              UI->overlay_text_bottom("Turn to change");
+              UI->Write();
+              if (button_encoder.fallingEdge()) {
+                ignore_rotary = false;
+                play_state = SELECTING_FILE;
+              }
+              break;
             }
           default:
             break;

@@ -9,10 +9,13 @@ enum ROTARY_STATES {
 enum EFFECTS {
   LPF,
   HPF,
-  VOLUME,
-  SPEED,
-  BITCRUSH,
+  DELAYMIX,
+  SPEEDUP,
+  SLOWDOWN,
 };
+
+std::string EFFECTS_STRINGS[5] = {"Low-pass filter", "High-pass filter", "Delay mix", "Speed up", "Slow down"};
+std::string AVAILABLE_AXES[4] = {"X+", "X-", "Y+", "Y-"};
 
 enum MAIN_STATES {
   PLAYBACK,
@@ -30,6 +33,7 @@ enum RECORDER_STATES {
 enum PLAYBACK_STATES {
   ADJUSTING_VOLUME,
   CHANGING_SAMPLE_SETTINGS,
+  CHANGING_FX_SETTINGS,
   SELECTING_FILE,
   PLAYING,
 };
