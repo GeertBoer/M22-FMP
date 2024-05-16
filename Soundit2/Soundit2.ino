@@ -1,4 +1,4 @@
-#define DEBUG
+#define no
 
 #ifdef DEBUG
 #define S_PL Serial.println
@@ -80,7 +80,7 @@ void setup() {
 int selected_audio_sample_nr = 0;
 int list_position = 0;
 
-MAIN_STATES main_state = PLAYBACK;
+MAIN_STATES main_state = RECORDER;
 RECORDER_STATES rec_state = BEFORE_RECORDING;
 PLAYBACK_STATES play_state = SELECTING_FILE;
 
@@ -127,6 +127,9 @@ void loop() {  // check buttons for changes
       if ((list_position < (int)nrs.size()) && (list_position >= 0)) {  // draw existing file numbers
         UI->draw_sample_nr(nrs[list_position], false);
         UI->overlay_fader(sys->get_mic_peak());
+        if (button_encoder.fallingEdge()) {
+          rec_state = ADJUSTING_RECORDING_SETTINGS;
+        }
       }
 
       if (list_position >= (int)nrs.size()) {  // draw '+' to add extra file for recording
@@ -136,8 +139,11 @@ void loop() {  // check buttons for changes
 
         if (button_rec.fallingEdge()) {
           int file_nr_to_record = get_lowest_free_nr(sd_wav_filenames);
-          UI->draw_sample_nr(file_nr_to_record, true);
+          // UI->draw_sample_nr(file_nr_to_record, true);
           sys->start_recording(file_nr_to_record);
+          UI->draw_text("Recording");  // maybe swap
+          sys->continue_recording();   // these two for recorder/message timing
+
           rec_state = DURING_RECORDING;
           S_PL("starting rec");
         }
@@ -166,6 +172,8 @@ void loop() {  // check buttons for changes
         list_position = -1;
         rec_state = BEFORE_RECORDING;
       }
+    } else if (rec_state == CHANGING_SAMPLE_SETTINGS) {
+
     }
   }
 
