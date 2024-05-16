@@ -59,18 +59,14 @@ void setup() {
   pinMode(BTN_REC, INPUT_PULLUP);
 
   UI = new SounditUI();
-  // UI->draw_message_screen_blocking("Hallo", button_rec);
 
   // read SD card for files
   fill_and_purge_filename_list_nrs(sd_wav_filenames);
-  // get_lowest_free_nr(sd_wav_filenames);
-
   get_used_nrs_int(sd_wav_filenames, nrs);
 
-
-  for (unsigned int i = 0; i < nrs.size(); i++) {
-    S_PL(nrs[i]);
-  }
+  // for (unsigned int i = 0; i < nrs.size(); i++) {
+  //   S_PL(nrs[i]);
+  // }
 
   sys = new AudioSystem(40);
 
@@ -83,7 +79,6 @@ void setup() {
 // track menu choices
 int selected_audio_sample_nr = 0;
 
-
 MAIN_STATES main_state = RECORDER;
 RECORDER_STATES rec_state = BEFORE_RECORDING;
 PLAYBACK_STATES play_state = SELECTING_FILE;
@@ -91,7 +86,6 @@ PLAYBACK_STATES play_state = SELECTING_FILE;
 bool encoder_turned = false;
 int sample_to_use = 0;
 bool ignore_rotary = false;
-
 
 int sample_menu_option = 0;
 bool sample_menu_option_active = false;
