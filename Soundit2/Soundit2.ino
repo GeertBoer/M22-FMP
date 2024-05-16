@@ -1,4 +1,4 @@
-#define NODEBUG
+#define DEBUG
 
 #ifdef DEBUG
 #define S_PL Serial.println
@@ -20,7 +20,10 @@ RotaryEncoder rotary_encoder(4, 3, 4);
 #define BTN_ENC 5
 #define BTN_REC 6
 Bounce button_encoder(BTN_ENC, 50);
-Bounce button_rec(BTN_REC, 50);
+Bounce button_rec(BTN_REC, 25);
+
+
+#include <EEPROM.h>
 
 bool playrec_sw = LOW;  // low is record
 
@@ -69,7 +72,6 @@ void setup() {
   // }
 
   sys = new AudioSystem(40);
-
   acc = new Accelerometer();
 
   list_position = nrs.size();
@@ -79,7 +81,7 @@ void setup() {
 // track menu choices
 int selected_audio_sample_nr = 0;
 
-MAIN_STATES main_state = RECORDER;
+MAIN_STATES main_state = PLAYBACK;
 RECORDER_STATES rec_state = BEFORE_RECORDING;
 PLAYBACK_STATES play_state = SELECTING_FILE;
 
@@ -171,7 +173,7 @@ void loop() {  // check buttons for changes
                   UI->Clear();
                   UI->draw_text("Recording");  // maybe swap
                   UI->Write();
-                  sys->continue_recording();   // these two for recorder/message timing
+                  sys->continue_recording();  // these two for recorder/message timing
 
                   rec_state = DURING_RECORDING;
 
@@ -321,15 +323,25 @@ void loop() {  // check buttons for changes
             break;
           case PLAYING:
             {
+              // handle sensors and effects
               int x = acc->x();
-              if (x < 0) {
-                x = x * -1;
-                x = map(x, 0, 280, 5000, 0);
-                sys->set_lpf(x);
-              } else if (x > 0) {
-                x = map(x, 0, 280, 0, 8000);
-                sys->set_hpf(x);
-              }
+              if (x < 0) { x = x * -1; }
+              sys->set_delay(x);
+
+              // if (x < -30) {
+              //   S_PL("LPF");
+              //   x = x * -1;
+              //   x = map(x, 30, 280, 10000, 0);
+              //   sys->set_lpf(x);
+              // } else if (x > 50) {
+              //   S_PL("HPF");
+              //   x = map(x, 50, 280, 0, 5000);
+              //   sys->set_hpf(x);
+              // }
+              // else {
+              //   S_PL(x);
+              //   sys->disable_filter();
+              // }
 
               int y = acc->y();
 

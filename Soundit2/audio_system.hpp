@@ -11,28 +11,37 @@
 #include <TeensyVariablePlayback.h>
 
 
+
+
 // GUItool: begin automatically generated code
-AudioPlaySdResmp playSdWav;  //xy=158,218
-AudioInputI2S i2s2;          //xy=301,462
-AudioFilterBiquad biquad1;   //xy=351,333
-AudioFilterBiquad biquad0;   //xy=367,232
-AudioRecordQueue queue1;     //xy=500,462
-AudioAnalyzePeak peak1;      //xy=502,519
-AudioMixer4 mixer0;          //xy=520,219
-AudioMixer4 mixer1;          //xy=525,347
-AudioOutputI2S i2s1;         //xy=745,218
+AudioPlaySdResmp playSdWav;  //xy=78,173
+AudioInputI2S i2s2;          //xy=257,675
+AudioFilterBiquad biquad0;   //xy=309,204
+AudioFilterBiquad biquad1;   //xy=314,402
+AudioRecordQueue queue1;     //xy=456,675
+AudioAnalyzePeak peak1;      //xy=458,732
+AudioMixer4 mixer1;          //xy=497,389
+AudioEffectDelay delay2;     //xy=501,522
+AudioEffectDelay delay1;     //xy=545,245
+AudioMixer4 mixer0;          //xy=550,124
+AudioOutputI2S i2s1;         //xy=779,271
 AudioConnection patchCord1(playSdWav, 0, mixer0, 0);
 AudioConnection patchCord2(playSdWav, 0, biquad0, 0);
 AudioConnection patchCord3(playSdWav, 1, mixer1, 0);
 AudioConnection patchCord4(playSdWav, 1, biquad1, 0);
 AudioConnection patchCord5(i2s2, 0, queue1, 0);
 AudioConnection patchCord6(i2s2, 0, peak1, 0);
-AudioConnection patchCord7(biquad1, 0, mixer1, 1);
-AudioConnection patchCord8(biquad0, 0, mixer0, 1);
-AudioConnection patchCord9(mixer0, 0, i2s1, 0);
-AudioConnection patchCord10(mixer1, 0, i2s1, 1);
-AudioControlSGTL5000 sgtl5000_1;  //xy=403,92
+AudioConnection patchCord7(biquad0, 0, mixer0, 1);
+AudioConnection patchCord8(biquad1, 0, mixer1, 1);
+AudioConnection patchCord9(mixer1, 0, i2s1, 1);
+AudioConnection patchCord10(mixer1, delay2);
+AudioConnection patchCord11(delay2, 0, mixer1, 2);
+AudioConnection patchCord12(delay1, 0, mixer0, 2);
+AudioConnection patchCord13(mixer0, 0, i2s1, 0);
+AudioConnection patchCord14(mixer0, delay1);
+AudioControlSGTL5000 sgtl5000_1;  //xy=443,23
 // GUItool: end automatically generated code
+
 
 
 
@@ -88,6 +97,10 @@ public:
 
   void set_lpf(int cutoff);
   void set_hpf(int cutoff);
+  void set_bpf(int cutoff);
+  void disable_filter();
+
+  void set_delay(int level);
 
   void set_speed(float speed);
 
@@ -120,6 +133,11 @@ AudioSystem::AudioSystem(int master_volume) {
   playSdWav.enableInterpolation(true);
   playSdWav.setPlaybackRate(1.0);
 
+  delay1.delay(0, 400);
+  delay2.delay(0, 400);
+  mixer0.gain(2, 0.0);
+  mixer1.gain(2, 0.0);
+
   if (!(SD.begin(SDCARD_CS_PIN))) {
     // stop here, but print a message repetitively
     while (1) {
@@ -128,7 +146,7 @@ AudioSystem::AudioSystem(int master_volume) {
     }
   }
 
-  AudioMemory(8);
+  AudioMemory(512);
 }
 
 float AudioSystem::mapf(float x, float in_min, float in_max, float out_min, float out_max) {
@@ -355,4 +373,28 @@ void AudioSystem::set_hpf(int cutoff) {
   mixer1.gain(0, 0.0);
   mixer0.gain(1, master_volume_f);
   mixer1.gain(1, master_volume_f);
+}
+
+void AudioSystem::set_bpf(int cutoff) {
+  biquad0.setBandpass(0, (float)cutoff, 1.0f);
+  biquad1.setBandpass(0, (float)cutoff, 1.0f);
+
+  mixer0.gain(0, 0.0);
+  mixer1.gain(0, 0.0);
+  mixer0.gain(1, master_volume_f);
+  mixer1.gain(1, master_volume_f);
+}
+
+void AudioSystem::disable_filter() {
+  mixer0.gain(0, master_volume_f);
+  mixer1.gain(0, master_volume_f);
+  mixer0.gain(1, 0.0);
+  mixer1.gain(1, 0.0);
+}
+
+
+void AudioSystem::set_delay(int level) {
+  float level_f = mapf((float)level, 0, 200, 0.0, 0.6);
+  mixer0.gain(2, level_f);
+  mixer1.gain(2, level_f);
 }
