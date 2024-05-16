@@ -81,7 +81,7 @@ void setup() {
 // track menu choices
 int selected_audio_sample_nr = 0;
 
-MAIN_STATES main_state = PLAYBACK;
+MAIN_STATES main_state = RECORDER;
 RECORDER_STATES rec_state = BEFORE_RECORDING;
 PLAYBACK_STATES play_state = SELECTING_FILE;
 
@@ -206,8 +206,8 @@ void loop() {  // check buttons for changes
           case AFTER_RECORDING:
             {
               UI->Clear();
-              UI->draw_sample_nr(sample_to_use);
               UI->overlay_text_top("Saved to");
+              UI->draw_sample_nr(sample_to_use);
               UI->Write();
               delay(3000);
               rec_state = BEFORE_RECORDING;
