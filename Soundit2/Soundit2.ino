@@ -1,4 +1,4 @@
-#define DEBUG
+#define NoDEBUG
 
 #ifdef DEBUG
 #define S_PL Serial.println
@@ -325,8 +325,17 @@ void loop() {  // check buttons for changes
             {
               // handle sensors and effects
               int x = acc->x();
-              if (x < 0) { x = x * -1; }
-              sys->set_delay(x);
+              if (x < 0) {
+                x = x * -1;
+                sys->set_delay(x);
+              } else if (x > 0) {
+                x = map(x, 0, 280, 10000, 4);
+                if (x < 4) {
+                  x = 4;
+                }
+                sys->set_lpf(x);
+              }
+
 
               // if (x < -30) {
               //   S_PL("LPF");
