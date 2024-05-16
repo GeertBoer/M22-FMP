@@ -1,7 +1,7 @@
 #pragma once
 
 #include <U8g2lib.h>
-#include <SimpleRotary.h>
+
 #include <Wire.h>
 
 #include <SD.h>
