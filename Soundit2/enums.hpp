@@ -12,9 +12,11 @@ enum EFFECTS {
   DELAYMIX,
   SPEEDUP,
   SLOWDOWN,
+  REVERSE,
 };
 
-std::string EFFECTS_STRINGS[5] = {"Low-pass filter", "High-pass filter", "Delay mix", "Speed up", "Slow down"};
+const int amount_of_effects = 6;
+std::string EFFECTS_STRINGS[amount_of_effects] = {"Low-pass filter", "High-pass filter", "Delay mix", "Speed up", "Slow down", "Reverse"};
 std::string AVAILABLE_AXES[4] = {"X+", "X-", "Y+", "Y-"};
 
 enum MAIN_STATES {

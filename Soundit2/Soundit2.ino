@@ -1,4 +1,4 @@
-#define DEBUG
+#define NODEBUG
 
 #ifdef DEBUG
 #define S_PL Serial.println
@@ -92,12 +92,66 @@ bool ignore_rotary = false;
 int sample_menu_option = 0;
 bool sample_menu_option_active = false;
 
-EFFECTS assigned_effects[4] = { DELAYMIX, DELAYMIX, SPEEDUP, SLOWDOWN };  // X+, X-, Y+, Y-
+EFFECTS assigned_effects[4] = { REVERSE, LPF, LPF, LPF };  // X+, X-, Y+, Y-
 
 int fx_to_change = 0;
-void fx_changer(int assignment_position) {
-}
 
+void handle_effect(EFFECTS effect, int sensor_value) {
+  if (sensor_value < 0) {
+    S_PL(sensor_value);
+    sensor_value = 0;
+  }
+  if (sensor_value > 250) {
+    S_PL(sensor_value);
+    sensor_value = 250;
+  }
+
+  switch (effect) {
+    case LPF:
+      {
+        // S_P("sensor_value: ");
+        // S_P(sensor_value);
+        int fx_value = map(sensor_value, 0, 250, 5000, 350);
+        if (fx_value < 350) {
+          fx_value = 350;
+        }
+        sys->set_lpf(fx_value);
+      }
+      break;
+    case HPF:
+      {
+        int fx_value = map(sensor_value, 0, 250, 300, 4000);
+        sys->set_hpf(fx_value);
+      }
+      break;
+    case DELAYMIX:
+      {
+        sys->set_delay(sensor_value);
+      }
+      break;
+    case SPEEDUP:
+      {
+        float speed = sys->mapf((float)sensor_value, 0, 250, 1.0, 2.0);
+        sys->set_speed(speed);
+      }
+      break;
+    case SLOWDOWN:
+      {
+        float speed = sys->mapf((float)sensor_value, 0, 250, 1.0, 0.3);
+        sys->set_speed(speed);
+      }
+      break;
+    case REVERSE:
+      {
+        float speed = sys->mapf((float)sensor_value, 0, 250, 0.5, -3.0);
+        sys->set_speed(speed);
+      }
+    default:
+      {
+        break;
+      }
+  }
+}
 
 void loop() {  // check buttons for changes
 
@@ -265,7 +319,7 @@ void loop() {  // check buttons for changes
                 }
               }
 
-               else if (list_position == -5) {  // y axis positive
+              else if (list_position == -5) {  // y axis positive
                 UI->Clear();
                 UI->overlay_text_top(EFFECTS_STRINGS[assigned_effects[3]]);
                 UI->draw_text(AVAILABLE_AXES[3]);
@@ -321,7 +375,7 @@ void loop() {  // check buttons for changes
                 }
               }
 
-             
+
               // else if (list_position == -1) {  // don't go below -1
               // else if (list_position == -1) {  // don't go below -1
               // else if (list_position == -1) {  // don't go below -1
@@ -392,41 +446,41 @@ void loop() {  // check buttons for changes
             break;
           case PLAYING:
             {
-              // handle sensors and effects
+              // BEGIN NEW SENSOR HANDLING CODE
               int x = acc->x();
-              if (x < 0) { x = x * -1; }
-
-
-              sys->set_delay(x);
-
-              // if (x < -30) {
-              //   S_PL("LPF");
-              //   x = x * -1;
-              //   x = map(x, 30, 280, 10000, 0);
-              //   sys->set_lpf(x);
-              // } else if (x > 50) {
-              //   S_PL("HPF");
-              //   x = map(x, 50, 280, 0, 5000);
-              //   sys->set_hpf(x);
-              // }
-              // else {
-              //   S_PL(x);
-              //   sys->disable_filter();
-              // }
-
               int y = acc->y();
 
-              if (y > 50) {
-                float speed = sys->mapf(y, 50, 280, 1.0, 2.0);
-                sys->set_speed(speed);
-              } else if (y < -50) {
-                y = y * -1;
-                float speed = sys->mapf(y, 50, 280, 1.0, 0.3);
-                sys->set_speed(speed);
+              if (x > 30) {  // X+
+                x = x - 30;
+
+                handle_effect(assigned_effects[0], x);
+
+              } else if (x < -30) {  //X-
+                x = x * -1;
+                x = x - 30;
+
+                handle_effect(assigned_effects[1], x);
+
               } else {
-                sys->set_speed(1.0);
               }
 
+              if (y > 30) {  //Y+
+                y = y - 30;
+
+                handle_effect(assigned_effects[2], y);
+
+              } else if (y < -30) {  //Y-
+                y = y * -1;
+                y = y - 30;
+
+                handle_effect(assigned_effects[3], y);
+              } else {
+              }
+
+
+
+
+              // END NEW SENSOR HANDLING CODE
 
 
               if (!sys->is_playing()) {
@@ -498,13 +552,14 @@ void loop() {  // check buttons for changes
               int current_effect = assigned_effects[fx_to_change];
               if (rotary_encoder.get_state() == TURNED_CW) {
                 current_effect++;
-                if (current_effect > 4) {
+                if (current_effect >= amount_of_effects) {
                   current_effect = 0;
                 }
               } else if (rotary_encoder.get_state() == TURNED_CCW) {
                 current_effect--;
                 if (current_effect < 0) {
-                  current_effect = 4;
+                  current_effect = amount_of_effects - 1;
+                  ;
                 }
               }
               assigned_effects[fx_to_change] = current_effect;
@@ -513,6 +568,9 @@ void loop() {  // check buttons for changes
               UI->draw_text(AVAILABLE_AXES[fx_to_change]);
               UI->overlay_text_bottom("Turn to change");
               UI->Write();
+
+              assigned_effects[fx_to_change] = static_cast<EFFECTS>(current_effect);
+
               if (button_encoder.fallingEdge()) {
                 ignore_rotary = false;
                 play_state = SELECTING_FILE;
