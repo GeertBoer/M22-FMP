@@ -443,10 +443,10 @@ void loop() {  // check buttons for changes
                 y_flat = true;
               }
 
-              // if (x_flat && y_flat) {
-              //   S_PL("resetting fx");
-              //   sys->reset_fx();
-              // }
+              if (x_flat && y_flat) {
+                S_PL("resetting fx");
+                sys->reset_fx();
+              }
 
 
 
