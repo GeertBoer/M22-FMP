@@ -77,6 +77,9 @@ private:
 
 public:
   AudioSystem(int master_volume);
+  
+  void handle_effect(EFFECTS effect, int sensor_value);
+
   void set_volume(int volume);
   int get_volume();
   bool play_wav(int samplenr);
@@ -103,6 +106,8 @@ public:
   void set_delay(int level);
 
   void set_speed(float speed);
+
+  void reset_fx();
 
   float mapf(float x, float in_min, float in_max, float out_min, float out_max);
 };
@@ -191,6 +196,13 @@ void AudioSystem::stop_playing() {
 
 bool AudioSystem::is_playing() {
   return playSdWav.isPlaying();
+}
+
+void AudioSystem::reset_fx() {
+  mixer0.gain(2, 0.0);
+  mixer1.gain(2, 0.0);
+  disable_filter();
+  playSdWav.setPlaybackRate(1.0);
 }
 
 void AudioSystem::delete_sample(int samplenr) {
@@ -397,4 +409,59 @@ void AudioSystem::set_delay(int level) {
   float level_f = mapf((float)level, 0, 200, 0.0, 0.6);
   mixer0.gain(2, level_f);
   mixer1.gain(2, level_f);
+}
+
+void AudioSystem::handle_effect(EFFECTS effect, int sensor_value) {
+  if (sensor_value < 0) {
+    S_PL(sensor_value);
+    sensor_value = 0;
+  }
+  if (sensor_value > 250) {
+    S_PL(sensor_value);
+    sensor_value = 250;
+  }
+
+  switch (effect) {
+    case LPF:
+      {
+        int fx_value = map(sensor_value, 0, 250, 5000, 350);
+        if (fx_value < 350) {
+          fx_value = 350;
+        }
+        set_lpf(fx_value);
+      }
+      break;
+    case HPF:
+      {
+        int fx_value = map(sensor_value, 0, 250, 300, 4000);
+        set_hpf(fx_value);
+      }
+      break;
+    case DELAYMIX:
+      {
+        set_delay(sensor_value);
+      }
+      break;
+    case SPEEDUP:
+      {
+        float speed = mapf((float)sensor_value, 0, 250, 1.0, 2.0);
+        set_speed(speed);
+      }
+      break;
+    case SLOWDOWN:
+      {
+        float speed = mapf((float)sensor_value, 0, 250, 1.0, 0.3);
+        set_speed(speed);
+      }
+      break;
+    case REVERSE:
+      {
+        float speed = mapf((float)sensor_value, 0, 250, 1.0, -2.0);
+        set_speed(speed);
+      }
+    default:
+      {
+        break;
+      }
+  }
 }

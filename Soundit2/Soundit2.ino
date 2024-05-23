@@ -110,60 +110,10 @@ bool sample_menu_option_active = false;
 
 int fx_to_change = 0;
 
-void handle_effect(EFFECTS effect, int sensor_value) {
-  if (sensor_value < 0) {
-    S_PL(sensor_value);
-    sensor_value = 0;
-  }
-  if (sensor_value > 250) {
-    S_PL(sensor_value);
-    sensor_value = 250;
-  }
+bool x_flat = false;
+bool y_flat = false;
 
-  switch (effect) {
-    case LPF:
-      {
-        int fx_value = map(sensor_value, 0, 250, 5000, 350);
-        if (fx_value < 350) {
-          fx_value = 350;
-        }
-        sys->set_lpf(fx_value);
-      }
-      break;
-    case HPF:
-      {
-        int fx_value = map(sensor_value, 0, 250, 300, 4000);
-        sys->set_hpf(fx_value);
-      }
-      break;
-    case DELAYMIX:
-      {
-        sys->set_delay(sensor_value);
-      }
-      break;
-    case SPEEDUP:
-      {
-        float speed = sys->mapf((float)sensor_value, 0, 250, 1.0, 2.0);
-        sys->set_speed(speed);
-      }
-      break;
-    case SLOWDOWN:
-      {
-        float speed = sys->mapf((float)sensor_value, 0, 250, 1.0, 0.3);
-        sys->set_speed(speed);
-      }
-      break;
-    case REVERSE:
-      {
-        float speed = sys->mapf((float)sensor_value, 0, 250, 1.0, -2.0);
-        sys->set_speed(speed);
-      }
-    default:
-      {
-        break;
-      }
-  }
-}
+
 
 void loop() {  // check buttons for changes
 
@@ -459,35 +409,44 @@ void loop() {  // check buttons for changes
           case PLAYING:
             {
               // BEGIN NEW SENSOR HANDLING CODE
+              x_flat = false;
+              y_flat = false;
+
               int x = acc->x();
               int y = acc->y();
 
               if (x > 30) {  // X+
                 x = x - 30;
 
-                handle_effect(assigned_effects[0], x);
+                sys->handle_effect(assigned_effects[0], x);
 
               } else if (x < -30) {  //X-
                 x = x * -1;
                 x = x - 30;
 
-                handle_effect(assigned_effects[1], x);
-
+                sys->handle_effect(assigned_effects[1], x);
               } else {
+                x_flat = true;
               }
 
               if (y > 30) {  //Y+
                 y = y - 30;
 
-                handle_effect(assigned_effects[2], y);
+                sys->handle_effect(assigned_effects[2], y);
 
               } else if (y < -30) {  //Y-
                 y = y * -1;
                 y = y - 30;
 
-                handle_effect(assigned_effects[3], y);
+                sys->handle_effect(assigned_effects[3], y);
               } else {
+                y_flat = true;
               }
+
+              // if (x_flat && y_flat) {
+              //   S_PL("resetting fx");
+              //   sys->reset_fx();
+              // }
 
 
 
