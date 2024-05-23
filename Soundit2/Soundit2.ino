@@ -49,6 +49,9 @@ Accelerometer* acc;
 std::vector<int> nrs;
 
 int list_position = 0;
+
+EFFECTS assigned_effects[4] = { REVERSE, LPF, LPF, LPF };  // X+, X-, Y+, Y-
+
 void setup() {
   Serial.begin(115200);
 #ifdef DEBUG
@@ -75,6 +78,18 @@ void setup() {
   acc = new Accelerometer();
 
   list_position = nrs.size();
+
+  for (int i = 0; i < 1080; i++) {
+    if (EEPROM.read(i) > 4) {
+      EEPROM.write(i,0x00);
+    }
+  }
+
+  assigned_effects[0] = static_cast<EFFECTS>(EEPROM.read(0));
+
+  for (int i = 0; i < 4; i++) {
+    assigned_effects[i] = static_cast<EFFECTS>(EEPROM.read(i));
+  }
 }
 
 
@@ -92,7 +107,7 @@ bool ignore_rotary = false;
 int sample_menu_option = 0;
 bool sample_menu_option_active = false;
 
-EFFECTS assigned_effects[4] = { REVERSE, LPF, LPF, LPF };  // X+, X-, Y+, Y-
+
 
 int fx_to_change = 0;
 
@@ -574,6 +589,7 @@ void loop() {  // check buttons for changes
               if (button_encoder.fallingEdge()) {
                 ignore_rotary = false;
                 play_state = SELECTING_FILE;
+                EEPROM.write(fx_to_change, static_cast<uint8_t>(current_effect));
               }
               break;
             }
