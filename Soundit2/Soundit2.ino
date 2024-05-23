@@ -34,7 +34,6 @@ std::vector<std::string> sd_wav_filenames;  // Where SD root filenames are held
 // for tracking whether file is valid WAV
 bool valid_audio_sample = false;
 
-int volume = 1;
 
 
 #include "soundit_ui.hpp"
@@ -50,7 +49,10 @@ std::vector<int> nrs;
 
 int list_position = 0;
 
-EFFECTS assigned_effects[4] = { REVERSE, LPF, LPF, LPF };  // X+, X-, Y+, Y-
+EFFECTS assigned_effects[4] = { LPF, LPF, LPF, LPF };  // X+, X-, Y+, Y-
+
+//settings:
+const int fx_deadzone = 30;
 
 void setup() {
   Serial.begin(115200);
@@ -415,28 +417,28 @@ void loop() {  // check buttons for changes
               int x = acc->x();
               int y = acc->y();
 
-              if (x > 30) {  // X+
-                x = x - 30;
+              if (x > fx_deadzone) {  // X+
+                x = x - fx_deadzone;
 
                 sys->handle_effect(assigned_effects[0], x);
 
-              } else if (x < -30) {  //X-
+              } else if (x < -fx_deadzone) {  //X-
                 x = x * -1;
-                x = x - 30;
+                x = x - fx_deadzone;
 
                 sys->handle_effect(assigned_effects[1], x);
               } else {
                 x_flat = true;
               }
 
-              if (y > 30) {  //Y+
-                y = y - 30;
+              if (y > fx_deadzone) {  //Y+
+                y = y - fx_deadzone;
 
                 sys->handle_effect(assigned_effects[2], y);
 
-              } else if (y < -30) {  //Y-
+              } else if (y < -fx_deadzone) {  //Y-
                 y = y * -1;
-                y = y - 30;
+                y = y - fx_deadzone;
 
                 sys->handle_effect(assigned_effects[3], y);
               } else {

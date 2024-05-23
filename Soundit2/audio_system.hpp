@@ -77,7 +77,7 @@ private:
 
 public:
   AudioSystem(int master_volume);
-  
+
   void handle_effect(EFFECTS effect, int sensor_value);
 
   void set_volume(int volume);
@@ -456,7 +456,14 @@ void AudioSystem::handle_effect(EFFECTS effect, int sensor_value) {
       break;
     case REVERSE:
       {
-        float speed = mapf((float)sensor_value, 0, 250, 1.0, -2.0);
+        float speed = 1.0;
+        if (sensor_value < 50) {
+          speed = mapf((float)sensor_value, 0, 100, 1.0, -0.5);
+        }
+        else {
+          speed = mapf((float)sensor_value, 100, 250, -0.5, -2.0);
+        }
+
         set_speed(speed);
       }
     default:
