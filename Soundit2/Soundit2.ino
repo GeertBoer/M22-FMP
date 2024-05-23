@@ -123,8 +123,6 @@ void handle_effect(EFFECTS effect, int sensor_value) {
   switch (effect) {
     case LPF:
       {
-        // S_P("sensor_value: ");
-        // S_P(sensor_value);
         int fx_value = map(sensor_value, 0, 250, 5000, 350);
         if (fx_value < 350) {
           fx_value = 350;
