@@ -1,4 +1,4 @@
-#define NoDEBUG
+#define NODEBUG
 
 #ifdef DEBUG
 #define S_PL Serial.println
@@ -49,6 +49,9 @@ Accelerometer* acc;
 std::vector<int> nrs;
 
 int list_position = 0;
+
+EFFECTS assigned_effects[4] = { REVERSE, LPF, LPF, LPF };  // X+, X-, Y+, Y-
+
 void setup() {
   Serial.begin(115200);
 #ifdef DEBUG
@@ -75,13 +78,24 @@ void setup() {
   acc = new Accelerometer();
 
   list_position = nrs.size();
+
+  for (int i = 0; i < 1080; i++) {
+    if (EEPROM.read(i) >= amount_of_effects) {
+      EEPROM.write(i, 0x00);
+    }
+  }
+
+
+  for (int i = 0; i < 4; i++) {
+    assigned_effects[i] = static_cast<EFFECTS>(EEPROM.read(i));
+  }
 }
 
 
 // track menu choices
 int selected_audio_sample_nr = 0;
 
-MAIN_STATES main_state = RECORDER;
+MAIN_STATES main_state = PLAYBACK;
 RECORDER_STATES rec_state = BEFORE_RECORDING;
 PLAYBACK_STATES play_state = SELECTING_FILE;
 
@@ -91,6 +105,67 @@ bool ignore_rotary = false;
 
 int sample_menu_option = 0;
 bool sample_menu_option_active = false;
+
+
+
+int fx_to_change = 0;
+
+void handle_effect(EFFECTS effect, int sensor_value) {
+  if (sensor_value < 0) {
+    S_PL(sensor_value);
+    sensor_value = 0;
+  }
+  if (sensor_value > 250) {
+    S_PL(sensor_value);
+    sensor_value = 250;
+  }
+
+  switch (effect) {
+    case LPF:
+      {
+        // S_P("sensor_value: ");
+        // S_P(sensor_value);
+        int fx_value = map(sensor_value, 0, 250, 5000, 350);
+        if (fx_value < 350) {
+          fx_value = 350;
+        }
+        sys->set_lpf(fx_value);
+      }
+      break;
+    case HPF:
+      {
+        int fx_value = map(sensor_value, 0, 250, 300, 4000);
+        sys->set_hpf(fx_value);
+      }
+      break;
+    case DELAYMIX:
+      {
+        sys->set_delay(sensor_value);
+      }
+      break;
+    case SPEEDUP:
+      {
+        float speed = sys->mapf((float)sensor_value, 0, 250, 1.0, 2.0);
+        sys->set_speed(speed);
+      }
+      break;
+    case SLOWDOWN:
+      {
+        float speed = sys->mapf((float)sensor_value, 0, 250, 1.0, 0.3);
+        sys->set_speed(speed);
+      }
+      break;
+    case REVERSE:
+      {
+        float speed = sys->mapf((float)sensor_value, 0, 250, 1.0, -2.0);
+        sys->set_speed(speed);
+      }
+    default:
+      {
+        break;
+      }
+  }
+}
 
 void loop() {  // check buttons for changes
 
@@ -206,8 +281,8 @@ void loop() {  // check buttons for changes
           case AFTER_RECORDING:
             {
               UI->Clear();
-              UI->overlay_text_top("Saved to");
               UI->draw_sample_nr(sample_to_use);
+              UI->overlay_text_top("Saved to");
               UI->Write();
               delay(3000);
               rec_state = BEFORE_RECORDING;
@@ -246,11 +321,11 @@ void loop() {  // check buttons for changes
         switch (play_state) {
           case SELECTING_FILE:
             {
-              if (list_position < -1) {  // don't go below -2
+              if (list_position <= -6) {  // don't go below -2
                 UI->Clear();
-                UI->draw_text("To recorder");
+                UI->draw_text("To recordr");
                 UI->Write();
-                list_position = -2;
+                list_position = -6;
                 if (button_encoder.fallingEdge()) {
                   list_position = 0;
                   rec_state = BEFORE_RECORDING;
@@ -258,8 +333,70 @@ void loop() {  // check buttons for changes
                 }
               }
 
-              else if (list_position == -1) {  // don't go below -1
-                list_position = -1;
+              else if (list_position == -5) {  // y axis positive
+                UI->Clear();
+                UI->overlay_text_top(EFFECTS_STRINGS[assigned_effects[3]]);
+                UI->draw_text(AVAILABLE_AXES[3]);
+                UI->overlay_text_bottom("Click to change");
+                UI->Write();
+
+                if (button_encoder.fallingEdge()) {
+                  fx_to_change = 3;
+                  play_state = CHANGING_FX_SETTINGS;
+                  ignore_rotary = true;
+                }
+              }
+
+              else if (list_position == -4) {  // y axis positive
+                UI->Clear();
+                UI->overlay_text_top(EFFECTS_STRINGS[assigned_effects[2]]);
+                UI->draw_text(AVAILABLE_AXES[2]);
+                UI->overlay_text_bottom("Click to change");
+                UI->Write();
+
+                if (button_encoder.fallingEdge()) {
+                  fx_to_change = 2;
+                  play_state = CHANGING_FX_SETTINGS;
+                  ignore_rotary = true;
+                }
+              }
+
+              else if (list_position == -3) {  // y axis positive
+                UI->Clear();
+                UI->overlay_text_top(EFFECTS_STRINGS[assigned_effects[1]]);
+                UI->draw_text(AVAILABLE_AXES[1]);
+                UI->overlay_text_bottom("Click to change");
+                UI->Write();
+
+                if (button_encoder.fallingEdge()) {
+                  fx_to_change = 1;
+                  play_state = CHANGING_FX_SETTINGS;
+                  ignore_rotary = true;
+                }
+              }
+
+              else if (list_position == -2) {  // y axis positive
+                UI->Clear();
+                UI->overlay_text_top(EFFECTS_STRINGS[assigned_effects[0]]);
+                UI->draw_text(AVAILABLE_AXES[0]);
+                UI->overlay_text_bottom("Click to change");
+                UI->Write();
+
+                if (button_encoder.fallingEdge()) {
+                  fx_to_change = 0;
+                  play_state = CHANGING_FX_SETTINGS;
+                  ignore_rotary = true;
+                }
+              }
+
+
+              // else if (list_position == -1) {  // don't go below -1
+              // else if (list_position == -1) {  // don't go below -1
+              // else if (list_position == -1) {  // don't go below -1
+
+
+
+              else if (list_position == -1) {
                 UI->Clear();
                 UI->draw_speaker_icon("Click knob to adjust", sys->get_volume());
                 UI->Write();
@@ -323,48 +460,41 @@ void loop() {  // check buttons for changes
             break;
           case PLAYING:
             {
-              // handle sensors and effects
+              // BEGIN NEW SENSOR HANDLING CODE
               int x = acc->x();
-              if (x < 0) {
-                x = x * -1;
-                sys->set_delay(x);
-              } else if (x > 0) {
-                x = map(x, 0, 280, 10000, 4);
-                if (x < 4) {
-                  x = 4;
-                }
-                sys->set_lpf(x);
-              }
-
-
-              // if (x < -30) {
-              //   S_PL("LPF");
-              //   x = x * -1;
-              //   x = map(x, 30, 280, 10000, 0);
-              //   sys->set_lpf(x);
-              // } else if (x > 50) {
-              //   S_PL("HPF");
-              //   x = map(x, 50, 280, 0, 5000);
-              //   sys->set_hpf(x);
-              // }
-              // else {
-              //   S_PL(x);
-              //   sys->disable_filter();
-              // }
-
               int y = acc->y();
 
-              if (y > 50) {
-                float speed = sys->mapf(y, 50, 280, 1.0, 2.0);
-                sys->set_speed(speed);
-              } else if (y < -50) {
-                y = y * -1;
-                float speed = sys->mapf(y, 50, 280, 1.0, 0.3);
-                sys->set_speed(speed);
+              if (x > 30) {  // X+
+                x = x - 30;
+
+                handle_effect(assigned_effects[0], x);
+
+              } else if (x < -30) {  //X-
+                x = x * -1;
+                x = x - 30;
+
+                handle_effect(assigned_effects[1], x);
+
               } else {
-                sys->set_speed(1.0);
               }
 
+              if (y > 30) {  //Y+
+                y = y - 30;
+
+                handle_effect(assigned_effects[2], y);
+
+              } else if (y < -30) {  //Y-
+                y = y * -1;
+                y = y - 30;
+
+                handle_effect(assigned_effects[3], y);
+              } else {
+              }
+
+
+
+
+              // END NEW SENSOR HANDLING CODE
 
 
               if (!sys->is_playing()) {
@@ -429,6 +559,37 @@ void loop() {  // check buttons for changes
                 default:
                   break;
               }
+              break;
+            }
+          case CHANGING_FX_SETTINGS:
+            {
+              int current_effect = assigned_effects[fx_to_change];
+              if (rotary_encoder.get_state() == TURNED_CW) {
+                current_effect++;
+                if (current_effect >= amount_of_effects) {
+                  current_effect = 0;
+                }
+              } else if (rotary_encoder.get_state() == TURNED_CCW) {
+                current_effect--;
+                if (current_effect < 0) {
+                  current_effect = amount_of_effects - 1;
+                }
+              }
+              assigned_effects[fx_to_change] = current_effect;
+              UI->Clear();
+              UI->overlay_text_top(EFFECTS_STRINGS[assigned_effects[fx_to_change]]);
+              UI->draw_text(AVAILABLE_AXES[fx_to_change]);
+              UI->overlay_text_bottom("Turn to change");
+              UI->Write();
+
+              assigned_effects[fx_to_change] = static_cast<EFFECTS>(current_effect);
+
+              if (button_encoder.fallingEdge()) {
+                ignore_rotary = false;
+                play_state = SELECTING_FILE;
+                EEPROM.write(fx_to_change, static_cast<uint8_t>(current_effect));
+              }
+              break;
             }
           default:
             break;
