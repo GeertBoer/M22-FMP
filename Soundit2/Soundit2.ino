@@ -80,12 +80,11 @@ void setup() {
   list_position = nrs.size();
 
   for (int i = 0; i < 1080; i++) {
-    if (EEPROM.read(i) > 4) {
-      EEPROM.write(i,0x00);
+    if (EEPROM.read(i) >= amount_of_effects) {
+      EEPROM.write(i, 0x00);
     }
   }
 
-  assigned_effects[0] = static_cast<EFFECTS>(EEPROM.read(0));
 
   for (int i = 0; i < 4; i++) {
     assigned_effects[i] = static_cast<EFFECTS>(EEPROM.read(i));
@@ -158,7 +157,7 @@ void handle_effect(EFFECTS effect, int sensor_value) {
       break;
     case REVERSE:
       {
-        float speed = sys->mapf((float)sensor_value, 0, 250, 0.5, -3.0);
+        float speed = sys->mapf((float)sensor_value, 0, 250, 1.0, -2.0);
         sys->set_speed(speed);
       }
     default:
@@ -574,7 +573,6 @@ void loop() {  // check buttons for changes
                 current_effect--;
                 if (current_effect < 0) {
                   current_effect = amount_of_effects - 1;
-                  ;
                 }
               }
               assigned_effects[fx_to_change] = current_effect;
