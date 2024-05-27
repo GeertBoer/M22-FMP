@@ -352,6 +352,10 @@ void loop() {  // check buttons for changes
                 UI->Write();
                 if (button_encoder.fallingEdge()) {
                   play_state = ADJUSTING_VOLUME;
+
+                  UI->Clear();
+                  UI->draw_speaker_icon("Turn knob to adjust", sys->get_volume());
+                  UI->Write();
                 }
               }
 
@@ -393,13 +397,16 @@ void loop() {  // check buttons for changes
             }
           case ADJUSTING_VOLUME:
             {
-              UI->Clear();
-              UI->draw_speaker_icon("Turn knob to adjust", sys->get_volume());
-              UI->Write();
               if (rotary_encoder.get_state() == TURNED_CW) {
                 sys->set_volume(sys->get_volume() + 5);
+                UI->Clear();
+                UI->draw_speaker_icon("Turn knob to adjust", sys->get_volume());
+                UI->Write();
               } else if (rotary_encoder.get_state() == TURNED_CCW) {
                 sys->set_volume(sys->get_volume() - 5);
+                UI->Clear();
+                UI->draw_speaker_icon("Turn knob to adjust", sys->get_volume());
+                UI->Write();
               }
 
               if (button_encoder.fallingEdge()) {
