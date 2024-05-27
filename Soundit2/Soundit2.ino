@@ -1,4 +1,4 @@
-#define NODEBUG
+#define NoDEBUG
 
 #ifdef DEBUG
 #define S_PL Serial.println
@@ -49,7 +49,7 @@ std::vector<int> nrs;
 
 int list_position = 0;
 
-EFFECTS assigned_effects[4] = { LPF, LPF, LPF, LPF };  // X+, X-, Y+, Y-
+EFFECTS assigned_effects[4] = { LPF, LPF, LPF, LPF };  // X+, X-, Y+, Y- // These will be overwritten by EEPROM memory contents later.
 
 //settings:
 const int fx_deadzone = 30;
@@ -60,34 +60,29 @@ void setup() {
   while (!Serial) {}  // Comment this when not on PC USB
 #endif
   while (!SD.begin()) {}
-
   Wire.begin();
 
   pinMode(BTN_ENC, INPUT_PULLUP);
   pinMode(BTN_REC, INPUT_PULLUP);
 
   UI = new SounditUI();
+  sys = new AudioSystem(40);
+  acc = new Accelerometer();
 
   // read SD card for files
   fill_and_purge_filename_list_nrs(sd_wav_filenames);
   get_used_nrs_int(sd_wav_filenames, nrs);
-
-  // for (unsigned int i = 0; i < nrs.size(); i++) {
-  //   S_PL(nrs[i]);
-  // }
-
-  sys = new AudioSystem(40);
-  acc = new Accelerometer();
-
   list_position = nrs.size();
 
-  for (int i = 0; i < 1080; i++) {
+
+  // Check FX memory for errors
+  for (uint8_t i = 0; i < 4; i++) {
     if (EEPROM.read(i) >= amount_of_effects) {
-      EEPROM.write(i, 0x00);
+      EEPROM.write(i, i);
     }
   }
 
-
+  // Read FX from memory
   for (int i = 0; i < 4; i++) {
     assigned_effects[i] = static_cast<EFFECTS>(EEPROM.read(i));
   }
@@ -97,21 +92,22 @@ void setup() {
 // track menu choices
 int selected_audio_sample_nr = 0;
 
-MAIN_STATES main_state = PLAYBACK;
+MAIN_STATES main_state = RECORDER;
 RECORDER_STATES rec_state = BEFORE_RECORDING;
 PLAYBACK_STATES play_state = SELECTING_FILE;
 
-bool encoder_turned = false;
-int sample_to_use = 0;
-bool ignore_rotary = false;
+
+
 
 int sample_menu_option = 0;
 bool sample_menu_option_active = false;
 
-
-
 int fx_to_change = 0;
+int sample_to_use = 0;
+bool ignore_rotary = false;
 
+
+bool encoder_turned = false;
 bool x_flat = false;
 bool y_flat = false;
 
@@ -338,13 +334,6 @@ void loop() {  // check buttons for changes
                   ignore_rotary = true;
                 }
               }
-
-
-              // else if (list_position == -1) {  // don't go below -1
-              // else if (list_position == -1) {  // don't go below -1
-              // else if (list_position == -1) {  // don't go below -1
-
-
 
               else if (list_position == -1) {
                 UI->Clear();
