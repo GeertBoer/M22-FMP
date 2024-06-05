@@ -1,4 +1,4 @@
-#define NoDEBUG
+#define NODEBUG
 
 #ifdef DEBUG
 #define S_PL Serial.println
@@ -13,7 +13,7 @@
 #include <Wire.h>
 #include "main_extra.hpp"
 #include "rotary_encoder.hpp"
-RotaryEncoder rotary_encoder(4, 3, 4);
+RotaryEncoder rotary_encoder(3, 4, 4);
 
 // buttons
 #include <Bounce.h>
@@ -63,6 +63,8 @@ void setup() {
   while (!Serial) {}  // Comment this when not on PC USB
 #endif
   while (!SD.begin()) {}
+  UI = new SounditUI();
+
   Wire.begin();
 
   pinMode(BTN_ENC, INPUT_PULLUP);
@@ -153,7 +155,7 @@ void loop() {  // check buttons for changes
           case BEFORE_RECORDING:
             {
               // gain adjust menu option:
-              if (list_position == -1) {
+              if (list_position <= -1) {
                 list_position = -1;
                 UI->Clear();
                 UI->draw_mic_icon("Click to adjust gain", sys->get_mic_peak());
@@ -168,7 +170,7 @@ void loop() {  // check buttons for changes
                 UI->Clear();
                 UI->overlay_rec_icon();
                 UI->draw_sample_nr(nrs[list_position]);
-                UI->overlay_text_top("Sample nr");
+                UI->overlay_text_top("sample nr.");
                 UI->overlay_fader(sys->get_mic_peak());
                 UI->Write();
               }
@@ -204,7 +206,15 @@ void loop() {  // check buttons for changes
 
           case DURING_RECORDING:
             {
-              sys->continue_recording();  // this MUST BE called continuously to keep recording, otherwise recording will crack or not record at all
+              bool busy_rec = true;
+              while (busy_rec) {
+                sys->continue_recording();  // this MUST BE called continuously to keep recording, otherwise recording will crack or not record at all
+                button_rec.update();
+                if (button_rec.risingEdge()) {
+                  busy_rec = false;
+                }
+              }
+
 
               // stop recording if button is let go
               if (button_rec.risingEdge()) {
@@ -224,9 +234,9 @@ void loop() {  // check buttons for changes
             {
               UI->Clear();
               UI->draw_sample_nr(sample_to_use);
-              UI->overlay_text_top("Saved to");
+              UI->overlay_text_top("saved to");
               UI->Write();
-              delay(3000);
+              delay(2200);
               rec_state = BEFORE_RECORDING;
               break;
             }
@@ -234,7 +244,7 @@ void loop() {  // check buttons for changes
           case ADJUSTING_MIC_GAIN:
             {
               UI->Clear();
-              UI->draw_mic_icon("Turn to adjust gain", sys->get_mic_peak());
+              UI->draw_mic_icon("turn to adjust gain", sys->get_mic_peak());
               UI->Write();
               if (rotary_encoder.get_state() == TURNED_CW) {
                 sys->mic_gain_plus();
@@ -267,7 +277,7 @@ void loop() {  // check buttons for changes
                 UI->Clear();
                 UI->overlay_text_top(EFFECTS_STRINGS[assigned_effects[3]]);
                 UI->draw_text(AVAILABLE_AXES[3]);
-                UI->overlay_text_bottom("Click to change");
+                UI->overlay_text_bottom("click to change");
                 UI->Write();
 
                 if (button_encoder.fallingEdge()) {
@@ -281,7 +291,7 @@ void loop() {  // check buttons for changes
                 UI->Clear();
                 UI->overlay_text_top(EFFECTS_STRINGS[assigned_effects[2]]);
                 UI->draw_text(AVAILABLE_AXES[2]);
-                UI->overlay_text_bottom("Click to change");
+                UI->overlay_text_bottom("click to change");
                 UI->Write();
 
                 if (button_encoder.fallingEdge()) {
@@ -295,7 +305,7 @@ void loop() {  // check buttons for changes
                 UI->Clear();
                 UI->overlay_text_top(EFFECTS_STRINGS[assigned_effects[1]]);
                 UI->draw_text(AVAILABLE_AXES[1]);
-                UI->overlay_text_bottom("Click to change");
+                UI->overlay_text_bottom("click to change");
                 UI->Write();
 
                 if (button_encoder.fallingEdge()) {
@@ -321,20 +331,20 @@ void loop() {  // check buttons for changes
 
               else if (list_position == -1) {
                 UI->Clear();
-                UI->draw_speaker_icon("Click knob to adjust", sys->get_volume());
+                UI->draw_speaker_icon("click to adjust", sys->get_volume());
                 UI->Write();
                 if (button_encoder.fallingEdge()) {
                   play_state = ADJUSTING_VOLUME;
 
                   UI->Clear();
-                  UI->draw_speaker_icon("Turn knob to adjust", sys->get_volume());
+                  UI->draw_speaker_icon("turn to adjust", sys->get_volume());
                   UI->Write();
                 }
               }
 
               else if ((list_position < (int)nrs.size()) && (list_position >= 0)) {  // draw existing file numbers
                 UI->Clear();
-                UI->overlay_text_bottom("Click to adjust");
+                UI->overlay_text_bottom("click to delete");
                 UI->overlay_play_icon();
                 UI->draw_sample_nr(nrs[list_position]);
                 UI->Write();
@@ -373,12 +383,12 @@ void loop() {  // check buttons for changes
               if (rotary_encoder.get_state() == TURNED_CW) {
                 sys->set_volume(sys->get_volume() + 5);
                 UI->Clear();
-                UI->draw_speaker_icon("Turn knob to adjust", sys->get_volume());
+                UI->draw_speaker_icon("turn to adjust", sys->get_volume());
                 UI->Write();
               } else if (rotary_encoder.get_state() == TURNED_CCW) {
                 sys->set_volume(sys->get_volume() - 5);
                 UI->Clear();
-                UI->draw_speaker_icon("Turn knob to adjust", sys->get_volume());
+                UI->draw_speaker_icon("turn to adjust", sys->get_volume());
                 UI->Write();
               }
 

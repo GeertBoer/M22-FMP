@@ -76,14 +76,34 @@ void SounditUI::Write() {
 }
 
 void SounditUI::overlay_rec_icon() {
+  // u8g2->setFontMode(1);
+  // u8g2->setBitmapMode(1);
+  // u8g2->setDrawColor(1);
+  // u8g2->drawFilledEllipse(10, 10, 7, 7);
+  // u8g2->setDrawColor(0);
+  // u8g2->setFont(u8g2_font_6x10_tr);
+  // u8g2->drawStr(8, 14, "R");
+
+  // u8g2->setBitmapMode(0);
+
+
+  // u8g2->setFontMode(1);
+  // u8g2->setBitmapMode(1);
+  // u8g2->setDrawColor(1);
+  // u8g2->drawFilledEllipse(17, 30, 7, 7);
+  // u8g2->setDrawColor(0);
+  // u8g2->setFont(u8g2_font_6x10_tr);
+  // u8g2->drawStr(15, 34, "R");
+  // u8g2->setBitmapMode(0);
+
+
   u8g2->setFontMode(1);
   u8g2->setBitmapMode(1);
   u8g2->setDrawColor(1);
-  u8g2->drawFilledEllipse(10, 10, 7, 7);
+  u8g2->drawFilledEllipse(22, 31, 7, 7);
   u8g2->setDrawColor(0);
   u8g2->setFont(u8g2_font_6x10_tr);
-  u8g2->drawStr(8, 14, "R");
-
+  u8g2->drawStr(20, 35, "R");
   u8g2->setBitmapMode(0);
 }
 
@@ -92,14 +112,14 @@ void SounditUI::overlay_play_icon() {
   u8g2->setDrawColor(2);
   u8g2->setBitmapMode(1);
 
-  u8g2->drawLine(4, 3, 4, 17);
-  u8g2->drawLine(5, 4, 5, 16);
-  u8g2->drawLine(6, 5, 6, 15);
-  u8g2->drawLine(7, 6, 7, 14);
-  u8g2->drawLine(8, 7, 8, 13);
-  u8g2->drawLine(9, 8, 9, 12);
-  u8g2->drawLine(10, 9, 10, 11);
-  u8g2->drawPixel(11, 10);
+  u8g2->drawLine(18, 24, 18, 38);
+  u8g2->drawLine(19, 25, 19, 37);
+  u8g2->drawLine(20, 26, 20, 36);
+  u8g2->drawLine(21, 27, 21, 35);
+  u8g2->drawLine(22, 28, 22, 34);
+  u8g2->drawLine(23, 29, 23, 33);
+  u8g2->drawLine(24, 30, 24, 32);
+  u8g2->drawPixel(25, 31);
 
   u8g2->setBitmapMode(0);
 }
@@ -117,7 +137,7 @@ void SounditUI::overlay_text_top(std::string text) {
   u8g2->setFont(u8g2_font_crox2h_tf);  //Font height = 20px, so centering vertically = (64-20)/2 = 22px
   int width = u8g2->getUTF8Width(text.c_str());
   int margin = (128 - width) / 2;
-  u8g2->drawStr(margin, 12, text.c_str());
+  u8g2->drawStr(margin, 16, text.c_str());
 }
 
 void SounditUI::draw_mic_icon(std::string text, float position) {
@@ -136,7 +156,7 @@ void SounditUI::draw_mic_icon(std::string text, float position) {
 void SounditUI::draw_speaker_icon(std::string text, int position) {
   u8g2->clearBuffer();
   u8g2->setDrawColor(1);
-  u8g2->drawXBM(0, 0, 128, 64, volume_icon_bits);
+  u8g2->drawXBM(0, 4, 128, 64, volume_icon_bits);
 
   u8g2->setFont(u8g2_font_crox2h_tf);  //Font height = 20px, so centering vertically = (64-20)/2 = 22px
   int width = u8g2->getUTF8Width(text.c_str());
@@ -169,6 +189,7 @@ void SounditUI::draw_plus() {
   u8g2->setDrawColor(1);
   u8g2->drawFilledEllipse(62, 30, 14, 14);
   u8g2->setDrawColor(0);
+
   u8g2->drawLine(62, 21, 62, 39);
   u8g2->drawLine(53, 30, 71, 30);
   u8g2->drawLine(53, 29, 71, 29);
@@ -180,7 +201,11 @@ void SounditUI::draw_plus() {
   u8g2->drawLine(62, 29, 62, 31);
   u8g2->setDrawColor(1);
   u8g2->setFont(u8g2_font_6x10_tr);
-  u8g2->drawStr(4, 57, "Create new recording");
+
+  string text = "add recording";
+  int width = u8g2->getUTF8Width(text.c_str());
+  int margin = (128 - width) / 2;
+  u8g2->drawStr(margin, 57, text.c_str());
 }
 
 
