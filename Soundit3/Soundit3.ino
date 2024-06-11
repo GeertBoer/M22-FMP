@@ -1,4 +1,4 @@
-#define NODEBUG
+#define NoDEBUG
 
 #ifdef DEBUG
 #define S_PL Serial.println
@@ -72,7 +72,7 @@ void setup() {
   pinMode(PLAYREC_SW, INPUT_PULLUP);
 
   UI = new SounditUI();
-  sys = new AudioSystem(40);
+  sys = new AudioSystem(65);
   acc = new Accelerometer();
 
   // read SD card for files
